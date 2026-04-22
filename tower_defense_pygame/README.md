@@ -123,35 +123,42 @@ Init → Handle Input → Update → Render → Check Win/Lose
 
 ## 🎨 Graphics
 
-Game sử dụng **procedural graphics** (vẽ bằng code):
-- Enemy: Circles với animation wobble + eyes
-- Tower: Circles với turret direction line
-- Projectile: Circles với trail effect
-- Map: Colored background + path lines
+### Sprites đã tích hợp sẵn! 🎉
 
-### Thêm Sprite Assets (Optional)
-
-Bạn có thể thay thế procedural graphics bằng sprite files:
+Game hiện đã được tích hợp sprite assets:
 
 ```
 assets/
 ├── enemy/
-│   ├── goblin_walk.png
-│   └── orc_walk.png
+│   ├── goblin.png    ✓
+│   └── orc.png       ✓
 ├── tower/
-│   ├── archer.png
-│   └── cannon.png
+│   ├── archer.png    ✓
+│   └── cannon.png    ✓
 ├── projectile/
-│   ├── arrow.png
-│   └── cannonball.png
+│   ├── arrow.png     ✓
+│   └── cannonball.png ✓
 └── map/
-    └── background.png
+    └── (background vẽ procedural)
 ```
+
+**Sprite System:**
+- Tự động load sprites khi game start
+- Cache sprites để tối ưu performance
+- Fallback về procedural graphics nếu sprite không tồn tại
+- Attack animation với scaling effect cho towers
+- HP bars luôn được vẽ lên trên sprites
+
+### Thêm Sprite Assets (Optional)
+
+Bạn có thể thay thế sprites bằng assets từ:
 
 Link sprite free:
 - [Kenney.nl Tower Defense Kit](https://kenney.nl/assets/tower-defense-kit)
 - [itch.io Tower Defense Assets](https://itch.io/game-assets/free/tag-tower-defense)
 - [OpenGameArt](https://opengameart.org)
+
+Chỉ cần đặt file PNG vào thư mục `assets/` tương ứng và game sẽ tự động sử dụng!
 
 ## 🔧 Customization
 

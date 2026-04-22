@@ -17,12 +17,76 @@ from pathlib import Path
 
 # Initialize Pygame
 pygame.init()
-pygame.mixer.init()
+# Skip mixer init for headless environments (can be enabled if audio is available)
+try:
+    pygame.mixer.init()
+except:
+    print("Warning: Audio mixer not available, running without sound")
 
 # Constants
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
 FPS = 60
+
+# Asset paths
+ASSETS_DIR = Path(__file__).parent / "assets"
+ENEMY_SPRITES_DIR = ASSETS_DIR / "enemy"
+TOWER_SPRITES_DIR = ASSETS_DIR / "tower"
+PROJECTILE_SPRITES_DIR = ASSETS_DIR / "projectile"
+MAP_SPRITES_DIR = ASSETS_DIR / "map"
+
+# Sprite cache
+SPRITE_CACHE = {}
+
+def load_sprite(path: Path, size: Tuple[int, int] = None) -> Optional[pygame.Surface]:
+    """Load a sprite from file with optional resizing"""
+    if path in SPRITE_CACHE:
+        return SPRITE_CACHE[path]
+    
+    try:
+        if path.exists():
+            sprite = pygame.image.load(str(path)).convert_alpha()
+            if size:
+                sprite = pygame.transform.smoothscale(sprite, size)
+            SPRITE_CACHE[path] = sprite
+            return sprite
+    except Exception as e:
+        print(f"Warning: Could not load sprite {path}: {e}")
+    return None
+
+def get_enemy_sprite(enemy_type: str, size: int) -> Optional[pygame.Surface]:
+    """Get sprite for enemy type"""
+    sprite_files = {
+        "goblin": ENEMY_SPRITES_DIR / "goblin.png",
+        "orc": ENEMY_SPRITES_DIR / "orc.png",
+        "boss": ENEMY_SPRITES_DIR / "orc.png"  # Use orc as fallback for boss
+    }
+    path = sprite_files.get(enemy_type)
+    if path:
+        return load_sprite(path, (size, size))
+    return None
+
+def get_tower_sprite(tower_type: str, size: int) -> Optional[pygame.Surface]:
+    """Get sprite for tower type"""
+    sprite_files = {
+        "archer": TOWER_SPRITES_DIR / "archer.png",
+        "cannon": TOWER_SPRITES_DIR / "cannon.png"
+    }
+    path = sprite_files.get(tower_type)
+    if path:
+        return load_sprite(path, (size, size))
+    return None
+
+def get_projectile_sprite(projectile_type: str, size: int) -> Optional[pygame.Surface]:
+    """Get sprite for projectile type"""
+    sprite_files = {
+        "arrow": PROJECTILE_SPRITES_DIR / "arrow.png",
+        "cannonball": PROJECTILE_SPRITES_DIR / "cannonball.png"
+    }
+    path = sprite_files.get(projectile_type)
+    if path:
+        return load_sprite(path, (size, size))
+    return None
 
 # Colors
 WHITE = (255, 255, 255)
@@ -482,21 +546,29 @@ class EnemySystem:
             if enemy.state in [EnemyState.DEAD, EnemyState.ESCAPE]:
                 continue
             
-            # Draw enemy body with animation wobble
-            wobble = math.sin(enemy.animation_frame * math.pi / 2) * 3
-            size = enemy.size + int(wobble)
+            # Try to load sprite first, fallback to procedural drawing
+            sprite = get_enemy_sprite(enemy.enemy_type, enemy.size)
             
-            pygame.draw.circle(screen, enemy_templates[enemy.enemy_type]["color"], 
-                             (int(enemy.position.x), int(enemy.position.y)), size // 2)
+            if sprite:
+                # Draw sprite centered on enemy position
+                rect = sprite.get_rect(center=(int(enemy.position.x), int(enemy.position.y)))
+                screen.blit(sprite, rect)
+            else:
+                # Fallback: Draw enemy body with animation wobble
+                wobble = math.sin(enemy.animation_frame * math.pi / 2) * 3
+                size = enemy.size + int(wobble)
+                
+                pygame.draw.circle(screen, enemy_templates[enemy.enemy_type]["color"], 
+                                 (int(enemy.position.x), int(enemy.position.y)), size // 2)
+                
+                # Draw eyes
+                eye_offset = size // 6
+                pygame.draw.circle(screen, WHITE, 
+                                 (int(enemy.position.x) - eye_offset, int(enemy.position.y) - eye_offset//2), size // 6)
+                pygame.draw.circle(screen, WHITE, 
+                                 (int(enemy.position.x) + eye_offset, int(enemy.position.y) - eye_offset//2), size // 6)
             
-            # Draw eyes
-            eye_offset = size // 6
-            pygame.draw.circle(screen, WHITE, 
-                             (int(enemy.position.x) - eye_offset, int(enemy.position.y) - eye_offset//2), size // 6)
-            pygame.draw.circle(screen, WHITE, 
-                             (int(enemy.position.x) + eye_offset, int(enemy.position.y) - eye_offset//2), size // 6)
-            
-            # HP bar
+            # HP bar (always drawn)
             hp_bar_width = enemy.size
             hp_bar_height = 4
             hp_percent = enemy.hp / enemy.max_hp
@@ -646,20 +718,35 @@ class TowerSystem:
         """Render all towers"""
         # Render placed towers
         for tower in self.towers:
-            # Draw tower base
-            pygame.draw.circle(screen, GRAY, (int(tower.position.x), int(tower.position.y)), tower.size // 2 + 5)
+            # Try to load sprite first, fallback to procedural drawing
+            sprite = get_tower_sprite(tower.tower_type, tower.size)
             
-            # Draw tower body with animation
-            color = TOWER_TEMPLATES[tower.tower_type]["color"]
-            size = tower.size // 2
+            if sprite:
+                # Draw sprite centered on tower position
+                rect = sprite.get_rect(center=(int(tower.position.x), int(tower.position.y)))
+                
+                # Apply attack animation scaling if attacking
+                if tower.animation_frame == 1:
+                    scaled_sprite = pygame.transform.smoothscale(sprite, (int(tower.size * 1.2), int(tower.size * 1.2)))
+                    rect = scaled_sprite.get_rect(center=(int(tower.position.x), int(tower.position.y)))
+                    screen.blit(scaled_sprite, rect)
+                else:
+                    screen.blit(sprite, rect)
+            else:
+                # Fallback: Draw tower base
+                pygame.draw.circle(screen, GRAY, (int(tower.position.x), int(tower.position.y)), tower.size // 2 + 5)
+                
+                # Draw tower body with animation
+                color = TOWER_TEMPLATES[tower.tower_type]["color"]
+                size = tower.size // 2
+                
+                if tower.animation_frame == 1:
+                    # Attack animation - slightly larger
+                    size = int(size * 1.2)
+                
+                pygame.draw.circle(screen, color, (int(tower.position.x), int(tower.position.y)), size)
             
-            if tower.animation_frame == 1:
-                # Attack animation - slightly larger
-                size = int(size * 1.2)
-            
-            pygame.draw.circle(screen, color, (int(tower.position.x), int(tower.position.y)), size)
-            
-            # Draw turret direction (if has target)
+            # Draw turret direction (if has target) - always drawn
             if tower.current_target:
                 direction = tower.position.direction_to(tower.current_target.position)
                 end_x = tower.position.x + direction[0] * (tower.range * 0.3)
@@ -735,19 +822,29 @@ class ProjectileSystem:
             if not proj.active:
                 continue
             
-            color = PROJECTILE_TEMPLATES[proj.projectile_type]["color"]
-            size = proj.size
+            # Try to load sprite first, fallback to procedural drawing
+            sprite = get_projectile_sprite(proj.projectile_type, proj.size)
             
-            pygame.draw.circle(screen, color, (int(proj.position.x), int(proj.position.y)), size // 2)
+            if sprite:
+                # Draw sprite centered on projectile position
+                rect = sprite.get_rect(center=(int(proj.position.x), int(proj.position.y)))
+                screen.blit(sprite, rect)
+            else:
+                # Fallback: Draw colored circle
+                color = PROJECTILE_TEMPLATES[proj.projectile_type]["color"]
+                size = proj.size
+                
+                pygame.draw.circle(screen, color, (int(proj.position.x), int(proj.position.y)), size // 2)
             
-            # Trail effect
+            # Trail effect (always drawn)
             direction = proj.position.direction_to(proj.target.position)
-            trail_length = size * 2
+            trail_length = proj.size * 2
             trail_x = proj.position.x - direction[0] * trail_length
             trail_y = proj.position.y - direction[1] * trail_length
-            pygame.draw.line(screen, color, 
+            trail_color = PROJECTILE_TEMPLATES[proj.projectile_type]["color"]
+            pygame.draw.line(screen, trail_color, 
                            (proj.position.x, proj.position.y), 
-                           (trail_x, trail_y), size // 3)
+                           (trail_x, trail_y), proj.size // 3)
 
 
 class CombatSystem:
