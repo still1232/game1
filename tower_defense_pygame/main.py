@@ -413,7 +413,7 @@ class MapSystem:
         if len(path_points) > 1:
             pygame.draw.lines(screen, self.map_data["path_color"], False, path_points, self.map_data["path_width"])
             # Draw path border
-            pygame.draw.lines(screen, BROWN, False, path_points, self.map_data["path_width"] + 4, 2)
+            pygame.draw.lines(screen, BROWN, False, path_points, self.map_data["path_width"] + 4)
         
         # Draw build nodes
         for node in self.build_nodes:
