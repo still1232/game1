@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Defense Core</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #game-container {
+            position: relative;
+            border: 3px solid #4a4a6a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: #2d5a27;
+        }
+        #ui-panel {
+            width: 800px;
+            padding: 15px;
+            background: #2a2a4a;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #aaa;
+            font-size: 14px;
+        }
+        .gold { color: #ffd700; }
+        .lives { color: #ff6b6b; }
+        .wave { color: #4ecdc4; }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #4a4a8a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #6a6aaa;
+        }
+        button:disabled {
+            background: #3a3a5a;
+            cursor: not-allowed;
+        }
+        #tower-selection {
+            display: flex;
+            gap: 10px;
+        }
+        .tower-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            background: #3a3a5a;
+            border: 2px solid transparent;
+        }
+        .tower-btn.selected {
+            border-color: #4ecdc4;
+        }
+        .tower-btn span {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏰 Tower Defense Core</h1>
+    
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="message"></div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <div class="stat-label">Gold</div>
+            <div class="stat gold" id="gold-display">100</div>
+        </div>
+        <div>
+            <div class="stat-label">Lives</div>
+            <div class="stat lives" id="lives-display">20</div>
+        </div>
+        <div>
+            <div class="stat-label">Wave</div>
+            <div class="stat wave" id="wave-display">1</div>
+        </div>
+        <div id="tower-selection">
+            <button class="tower-btn selected" data-tower="archer">
+                🏹 Archer
+                <span>50g</span>
+            </button>
+            <button class="tower-btn" data-tower="cannon">
+                💣 Cannon
+                <span>100g</span>
+            </button>
+        </div>
+        <button id="start-wave-btn">Start Wave</button>
+    </div>
+
+    <script src="src/game.js"></script>
+</body>
+</html>
